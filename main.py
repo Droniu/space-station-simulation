@@ -3,6 +3,8 @@ import random as r
 import threading
 import time
 
+# todo - enemy class, medbay, weapons
+
 class Astronaut(threading.Thread):
     def __init__(self, x=0, y=0, running=True):
         threading.Thread.__init__(self)
@@ -17,6 +19,7 @@ class Astronaut(threading.Thread):
             time.sleep(0.05)
             self.x += self.movementX
             self.y += self.movementY
+        
             
             
 
