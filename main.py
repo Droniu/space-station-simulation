@@ -81,7 +81,7 @@ def main():
             entity.movementY += 1
 
         if keys_pressed[pygame.K_DOWN]:
-            entity.movementY -= 1
+            entity.movementY     -= 1
 
 
         screen.fill([32, 32, 32])
