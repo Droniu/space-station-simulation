@@ -28,6 +28,7 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
         self.movementY = 0
         
         self.healthpoints = 100
+        self.speed = 3
         self.weapon = None
         self.ammo = 0
         self.kit = False
@@ -48,12 +49,14 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
             time.sleep(0.05)
             if self.healthpoints == 0:
                 self.die(self)
+            
             self.rect.left += self.movementX
             self.rect.top -= self.movementY
             if self.ammo>0:
                 pass
             else:
-                self.go_armory()
+                pass
+                #self.go_armory()
             
     def stay(self):
         self.movementX = 0
@@ -67,8 +70,9 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
     def go_medbay(self):
         pass
     def die(self):
-        
         self.running = False
+        
+        
                 
 class Enemy():
     def __init__(self, x=0, y=0, type="Phantom"):
@@ -88,6 +92,25 @@ class Background(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = location
             
+
+class Game(threading.Thread):
+    def __init__(self, group):
+        threading.Thread.__init__(self)
+        self.group = group
+        self.running = True
+    
+    def run(self):
+        while self.running:
+            time.sleep(r.randrange(1, 5))
+            for n in self.group:
+                if bool(r.getrandbits(1)):
+                    n.movementX = n.speed
+                else:
+                    n.movementX = -n.speed
+                if bool(r.getrandbits(1)):
+                    n.movementY = n.speed
+                else:
+                    n.movementY = -n.speed
             
 
 def main():
@@ -106,11 +129,11 @@ def main():
         
     for n in entities:
         n.start()
-    
-    
-    entities.add(entity)
+        
+    game = Game(entities)
+    game.start()
 
-    bg = Background("sprites/map_draft.png", [0,0])
+    bg = Background("sprites/map.png", [0,0])
     
     running = True
     while running:
@@ -120,6 +143,7 @@ def main():
                 for n in entities:
                     n.running = False
                 running = False
+                game.running = False
                 pygame.quit()
                 sys.exit()
                 
