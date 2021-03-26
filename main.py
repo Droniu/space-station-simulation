@@ -55,7 +55,7 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
             "dying": Spritesheet('sprites/pngs/fighter_dying.png').images_at(
                 ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0))
         }
-        self.spritesheet = self.sprite_catalog["walking_shooting"]
+        self.spritesheet = self.sprite_catalog["idle_weapon"]
         self.current_sprite = 0
         self.is_animating = True
         self.image = self.spritesheet[self.current_sprite] 
@@ -118,7 +118,21 @@ class Enemy(threading.Thread, pygame.sprite.Sprite):
     def __init__(self, x=1080, y=350, atype="Phantom"):
         threading.Thread.__init__(self)
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("sprites/pngs/enemy.png")
+        
+        self.sprite_catalog = {
+            "phantom_idle": Spritesheet('sprites/pngs/phantom_idle.png').images_at(
+                ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0)),
+            "phantom_walking": Spritesheet('sprites/pngs/phantom_walking.png').images_at(
+                ((0, 0, 68, 63),(69, 0, 138, 63),(0, 64, 68, 128),(69, 64, 138, 128)), colorkey=(0, 0, 0)),
+            "phantom_attack": Spritesheet('sprites/pngs/phantom_attack.png').images_at(
+                ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0))
+        }
+        
+        self.spritesheet = self.sprite_catalog["phantom_walking"]
+        self.current_sprite = 0
+        self.is_animating = True
+        self.image = self.spritesheet[self.current_sprite]
+        
         self.rect = self.image.get_rect()
         self.rect.bottomleft = [x, y]
         self.movementX = 0
@@ -128,12 +142,34 @@ class Enemy(threading.Thread, pygame.sprite.Sprite):
         if atype == "Phantom":
             self.healthpoints = 100
             self.speed = 3
+            
+            self.sprite_catalog = {
+                "phantom_idle": Spritesheet('sprites/pngs/phantom_idle.png').images_at(
+                    ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0)),
+                "phantom_walking": Spritesheet('sprites/pngs/phantom_walking.png').images_at(
+                    ((0, 0, 68, 63),(69, 0, 138, 63),(0, 64, 68, 128),(69, 64, 138, 128)), colorkey=(0, 0, 0)),
+                "phantom_attack": Spritesheet('sprites/pngs/phantom_attack.png').images_at(
+                    ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0))
+            }
+            
         elif atype == "Stalker":
             self.healthpoints = 75
             self.speed = 5
         elif atype == "Nightmare":
             self.healthpoints = 500
             self.speed = 1
+    
+    def update(self):
+        if self.is_animating == True:
+            self.current_sprite += 0.085
+            
+            if self.current_sprite >= len(self.spritesheet):
+                self.current_sprite = 0
+            
+            self.image = self.spritesheet[int(self.current_sprite)]
+    
+    def animate(self):
+        self.is_animating = True
     
     def run(self):
         while self.running:
@@ -182,16 +218,17 @@ class Background(pygame.sprite.Sprite):
             
 
 class Game(threading.Thread):
-    def __init__(self, astronauts, enemy):
+    def __init__(self, astronauts, enemies):
         threading.Thread.__init__(self)
         self.astronauts = astronauts
-        self.enemy = enemy
+        self.enemies = enemies
         self.running = True
     
     def run(self):
         while self.running:
             time.sleep(0.1)
-            self.enemy.find_victim(self.astronauts)
+            #for n in self.enemies:
+                #n.find_victim(self.astronauts)
             
                 
         
@@ -203,20 +240,21 @@ def main():
 
     screen = pygame.display.set_mode([1280, 720])
 
-    entities = pygame.sprite.Group()
-    enemy = Enemy()
+    astronauts = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
     
     for i in range(0, 5):
         x = r.randrange(550, 1280)
         y = r.randrange(100, 720)
-        entity = Astronaut(x, y)
-        entities.add(entity)
+        astronauts.add(Astronaut(x, y))
+        enemies.add(Enemy())
         
-    for n in entities:
+    for n in astronauts:
         n.start()
-    enemy.start()
+    for n in enemies:
+        n.start()
         
-    game = Game(entities, enemy)
+    game = Game(astronauts, enemies)
     game.start()
 
     bg = Background("sprites/map.png", [0,0])
@@ -226,10 +264,11 @@ def main():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                for n in entities:
+                for n in astronauts:
+                    n.running = False
+                for n in enemies:
                     n.running = False
                 running = False
-                enemy.running = False
                 game.running = False
                 pygame.quit()
                 sys.exit()
@@ -237,10 +276,11 @@ def main():
         screen.fill([32, 32, 32])
         screen.blit(bg.image, bg.rect)
         
-        entities.draw(screen)
-        entities.update()
+        astronauts.draw(screen)
+        astronauts.update()
         
-        screen.blit(enemy.image, enemy.rect)
+        enemies.draw(screen)
+        enemies.update()
 
         pygame.display.flip()
 
