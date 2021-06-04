@@ -10,6 +10,14 @@ from math import sqrt
 # 550 - arena start from left
 # 100 - arena start from top
 
+# constants - armory x, y, same for medbay
+# movement into specific places
+# sleep for a while
+# change state variables (e.g. ammo, hp).
+
+# what happens next? where does the character go?
+
+
 class Spritesheet(object):
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert()
@@ -68,7 +76,7 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
         
         self.healthpoints = 100
         self.speed = 3
-        self.weapon = None
+        self.weapon = True
         self.ammo = 0
         self.kit = False
         
@@ -86,32 +94,42 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
     def run(self):
         while self.running:
             time.sleep(0.05)
+
             if self.healthpoints <= 0:
                 self.die(self)
+                
+            if self.underAttack:
+                if (self.weapon and (self.ammo > 0)):
+                    self.attack_escape()
+                else:
+                    self.escape()
+            else:
+                if self.healthpoints < 50:
+                    if self.medkit == True:
+                        self.medkit = False
+                        self.healthpoints = 100    
+                    else:
+                        pass
             
             self.rect.left += self.movementX
             self.rect.top -= self.movementY
 
-            if self.ammo>0:
-                pass
-            else:
-                pass
-                #self.go_armory()
             
     def stay(self):
         self.movementX = 0
         self.movementY = 0
-    def attack(self, Enemy):
-        pass
-    def escape(self): 
-        pass
     def go_armory(self):
         pass
-    def go_medbay(self):
+    def go_medbay(self): # medbay coordinates - 550, 500
+        pass
+    def attack_escape():
+        pass
+    def attack():
+        pass
+    def escape():
         pass
     def die(self):
         self.running = False
-        
         
                 
 class Enemy(threading.Thread, pygame.sprite.Sprite):
@@ -179,6 +197,7 @@ class Enemy(threading.Thread, pygame.sprite.Sprite):
             
             if self.healthpoints <= 0:
                 self.die()
+
             
         
     def die(self):
@@ -205,7 +224,6 @@ class Enemy(threading.Thread, pygame.sprite.Sprite):
         else:
             self.movementY = -self.speed
         
-                
             
         
         
@@ -242,6 +260,9 @@ def main():
 
     astronauts = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
+    medbay = threading.Lock()
+    armoryOne = threading.Lock()
+    armoryTwo = threading.Lock()
     
     for i in range(0, 5):
         x = r.randrange(550, 1280)
