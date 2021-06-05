@@ -44,7 +44,7 @@ class Spritesheet(object):
         return self.images_at(tups, colorkey)
 
 class Astronaut(threading.Thread, pygame.sprite.Sprite):
-    def __init__(self, x=0, y=0, running=True):
+    def __init__(self, x=0, y=0, lockObjects=[], enemies=None):
         threading.Thread.__init__(self)
         pygame.sprite.Sprite.__init__(self)
         self.sprite_catalog = {
@@ -53,13 +53,13 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
             "idle_weapon": Spritesheet('sprites/pngs/fighter_idle_weapon.png').images_at(
                 ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0)),
             "idle_shooting": Spritesheet('sprites/pngs/fighter_idle_shooting.png').images_at(
-                ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0)),
+                ((0, 0, 79, 63),(80, 0, 160,63),(0, 64, 79, 128),(80, 64, 160, 128)), colorkey=(0, 0, 0)),
             "walking_empty": Spritesheet('sprites/pngs/fighter_walking_empty.png').images_at(
                 ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0)),
             "walking_weapon": Spritesheet('sprites/pngs/fighter_walking_weapon.png').images_at(
                 ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0)),
             "walking_shooting": Spritesheet('sprites/pngs/fighter_walking_shooting.png').images_at(
-                ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0)),
+                ((0, 0, 79, 63),(80, 0, 160,63),(0, 64, 79, 128),(80, 64, 160, 128)), colorkey=(0, 0, 0)),
             "dying": Spritesheet('sprites/pngs/fighter_dying.png').images_at(
                 ((0, 0, 63, 63),(64, 0, 128,63),(0, 64, 63, 128),(64, 64, 128, 128)), colorkey=(0, 0, 0))
         }
@@ -70,17 +70,21 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
         
         self.rect = self.image.get_rect()
         self.rect.topleft = [x, y]
-        self.running = running
+        self.running = True
         self.movementX = 0
         self.movementY = 0
+        
+        self.lockObjects = lockObjects
+        self.enemies = enemies
         
         self.healthpoints = 100
         self.speed = 3
         self.weapon = True
-        self.ammo = 0
+        self.ammo = 30
         self.medkit = False
         
         self.underAttack = False
+        self.isHit = False
         
     def update(self):
         if self.is_animating == True:
@@ -92,19 +96,29 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
     
     def animate(self):
         self.is_animating = True
+
+        
     
     def run(self):
         while self.running:
             time.sleep(0.05)
+            self.rect.left += self.movementX
+            self.rect.top -= self.movementY
+            
+            # collision detection with alien
+            for n in self.enemies:
+                if self.rect.colliderect(n.rect):
+                    self.isHit = True
+                    break
+                else:
+                    self.isHit = False
 
             if self.healthpoints <= 0:
-                self.spritesheet = self.sprite_catalog["dying"]
-                time.sleep(0.85)
                 self.die()
                 
-            if self.underAttack:
+            if self.isHit:
                 if (self.weapon and (self.ammo > 0)):
-                    self.attack_escape()
+                    self.attackEscape()
                 else:
                     self.escape()
             else:
@@ -113,26 +127,83 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
                         self.medkit = False
                         self.healthpoints = 100	
                     else:
-                        pass
+                        if not self.lockObjects[0].locked():
+                            self.goMedbay()
+                        else: 
+                            self.escape()
+                            
+                else:
+                    if (self.weapon and (self.ammo > 0)):
+                        if not self.enemies:
+                            self.stay()
+                        else:
+                            self.attack(self.enemies)
+                    else:
+                        if not self.lockObjects[1].locked() \
+                        or not self.lockObjects[2].locked():
+                            self.goArmory()
+                        else:
+                            self.escape()
             
-            self.rect.left += self.movementX
-            self.rect.top -= self.movementY
 
             
     def stay(self):
         self.movementX = 0
         self.movementY = 0
-    def go_armory(self):
+    def goArmory(self):
         pass
-    def go_medbay(self): # medbay coordinates - 550, 500
+    def goMedbay(self): # medbay coordinates - 550, 500
         pass
-    def attack_escape():
-        pass
-    def attack():
-        pass
+    
+    def findNearest(self, group):
+        shortest = -1
+        chosen = None
+        for n in group:
+            dist = sqrt( (self.rect.centerx - n.rect.centerx)**2 + (self.rect.centery - n.rect.centery)**2 )
+            if shortest == -1:
+                shortest=dist
+                chosen = n
+            if dist<shortest:
+                shortest=dist
+                chosen = n
+        return chosen
+    
+    def attackEscape(self):
+
+        chosen = self.findNearest(self.enemies)
+        if (chosen is not None):   
+            self.speed=2
+            if chosen.rect.centerx < self.rect.centerx:
+                self.movementX = self.speed
+            if chosen.rect.centerx >= self.rect.centerx:
+                self.movementX = -self.speed
+                
+            if chosen.rect.centerx < self.rect.centerx:
+                self.movementY = -self.speed
+            if chosen.rect.centerx >= self.rect.centerx:
+                self.movementY = self.speed
+            
+            chosen.healthpoints -= 1
+            self.ammo -= 1
+            self.spritesheet = self.sprite_catalog["walking_shooting"]
+            self.speed=3
+            
+
+    def attack(self, attackers):
+        self.stay()
+        chosen = self.findNearest(self.enemies)
+        if (chosen is not None):   
+            chosen.healthpoints -= 3
+            self.ammo -= 1
+            self.spritesheet = self.sprite_catalog["idle_shooting"]
+            time.sleep(0.8)
+        
     def escape(self):
         pass
     def die(self):
+        self.stay()
+        self.spritesheet = self.sprite_catalog["dying"]
+        time.sleep(0.85)
         self.running = False
         
                 
@@ -321,17 +392,20 @@ def main():
 
     astronauts = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
-    medbay = threading.Lock()
-    armoryOne = threading.Lock()
-    armoryTwo = threading.Lock()
+    lockObjects = []
+    # 0 - medbay, 1 - armory, 2 - armory
+    for i in range(0, 3):
+        lockObjects.append(threading.Lock())
+    
+    for i in range(0, 3):
+        enemies.add(Enemy())
     
     for i in range(0, 8):
         x = r.randrange(550, 1180)
         y = r.randrange(100, 620)
-        astronauts.add(Astronaut(x, y))
+        astronauts.add(Astronaut(x, y, lockObjects, enemies))
         
-    for i in range(0, 3):
-        enemies.add(Enemy())
+
         
     for n in astronauts:
         n.start()
