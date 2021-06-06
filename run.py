@@ -38,6 +38,8 @@ def main():
 
     bg = Background("sprites/map.png", [0,0])
     
+    wall = Background("sprites/wall.png", [0,0])
+    
     running = True
     while running:
 
@@ -60,6 +62,8 @@ def main():
         
         enemies.draw(screen)
         enemies.update()
+        
+        screen.blit(wall.image, wall.rect)
 
         pygame.display.flip()
         
