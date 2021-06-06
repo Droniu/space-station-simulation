@@ -44,7 +44,7 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
         self.healthpoints = 100
         self.speed = 3
         self.weapon = True
-        self.ammo = 30    
+        self.ammo = r.randrange(10, 100)    
         self.medkit = False
         
         self.underAttack = False
@@ -200,7 +200,7 @@ class Astronaut(threading.Thread, pygame.sprite.Sprite):
             self.weapon = False
         else:
             self.weapon = True
-        self.ammo = 30
+        self.ammo = r.randrange(50,100)
         self.lockObjects[slot].release()
         while self.goingToCenter: 
             time.sleep(0.05)
@@ -364,7 +364,7 @@ class Enemy(threading.Thread, pygame.sprite.Sprite):
         self.running = True
         
         if atype == "Phantom":
-            self.healthpoints = 100
+            self.healthpoints = 50
             self.speed = 3
             self.attackPower = 20
             self.sprite_catalog = {
