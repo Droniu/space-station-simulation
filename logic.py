@@ -1,4 +1,3 @@
-import sys
 import pygame
 import random as r
 import threading
@@ -543,13 +542,3 @@ class Game(threading.Thread):
             for n in self.astronauts:
                 if not n.running:
                     self.astronauts.remove(n)
-            
-                
-        
-            
-
-
-
-
-
-
