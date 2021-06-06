@@ -4,44 +4,7 @@ import random as r
 import threading
 import time
 from math import sqrt
-
-# todo - enemy class, medbay, weapons
-
-# 550 - arena start from left
-# 100 - arena start from top
-
-# constants - armory x, y, same for medbay
-# movement into specific places
-# sleep for a while
-# change state variables (e.g. ammo, hp).
-
-# what happens next? where does the character go?
-
-
-class Spritesheet(object):
-    def __init__(self, filename):
-        self.sheet = pygame.image.load(filename).convert()
-    # Load a specific image from a specific rectangle
-    def image_at(self, rectangle, colorkey = None):
-        "Loads image from x,y,x+offset,y+offset"
-        rect = pygame.Rect(rectangle)
-        image = pygame.Surface(rect.size).convert()
-        image.blit(self.sheet, (0, 0), rect)
-        if colorkey is not None:
-            if colorkey is -1:
-                colorkey = image.get_at((0,0))
-            image.set_colorkey(colorkey, pygame.RLEACCEL)
-        return image
-    # Load a whole bunch of images and return them as a list
-    def images_at(self, rects, colorkey = None):
-        "Loads multiple images, supply a list of coordinates" 
-        return [self.image_at(rect, colorkey) for rect in rects]
-    # Load a whole strip of images
-    def load_strip(self, rect, image_count, colorkey = None):
-        "Loads a strip of images and returns them as a list"
-        tups = [(rect[0]+rect[2]*x, rect[1], rect[2], rect[3])
-                for x in range(image_count)]
-        return self.images_at(tups, colorkey)
+from spritesheet import Spritesheet
 
 class Astronaut(threading.Thread, pygame.sprite.Sprite):
     def __init__(self, x=0, y=0, lockObjects=[], enemies=None, id=-1):
@@ -585,66 +548,8 @@ class Game(threading.Thread):
         
             
 
-def main():
-    
-    pygame.init()
-
-    screen = pygame.display.set_mode([1280, 720])
-    pygame.display.set_caption('Space Station Simulation')
-
-    astronauts = pygame.sprite.Group()
-    enemies = pygame.sprite.Group()
-    lockObjects = []
-    # 0 - medbay, 1 - armory, 2 - armory
-    for i in range(0, 3):
-        lockObjects.append(threading.Lock())
-    
-    for i in range(0, 3):
-        enemies.add(Enemy(i))
-    
-    for i in range(0, 8):
-        x = r.randrange(550, 1180)
-        y = r.randrange(100, 620)
-        astronauts.add(Astronaut(x, y, lockObjects, enemies, i))
-    #print("=== GAME STARTS ===")    
-
-        
-    for n in astronauts:
-        n.start()
-    for n in enemies:
-        n.start()
-        
-    game = Game(astronauts, enemies)
-    game.start()
-
-    bg = Background("sprites/map.png", [0,0])
-    
-    running = True
-    while running:
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                for n in astronauts:
-                    n.running = False
-                for n in enemies:
-                    n.running = False
-                running = False
-                game.running = False
-                pygame.quit()
-                sys.exit()
-
-        screen.fill([32, 32, 32])
-        screen.blit(bg.image, bg.rect)
-        
-        astronauts.draw(screen)
-        astronauts.update()
-        
-        enemies.draw(screen)
-        enemies.update()
-
-        pygame.display.flip()
 
 
 
-if __name__ == "__main__":
-    main()
+
+
